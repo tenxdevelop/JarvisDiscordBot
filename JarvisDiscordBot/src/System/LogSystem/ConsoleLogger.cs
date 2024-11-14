@@ -24,6 +24,7 @@ namespace JarvisDiscordBot
         {
             Console.ForegroundColor = GetColorFromLevel(level);
             Console.WriteLine(Patern(message, level));
+            Console.ForegroundColor = ConsoleColor.White;
         }
 
         private ConsoleColor GetColorFromLevel(LogLevel logLevel)

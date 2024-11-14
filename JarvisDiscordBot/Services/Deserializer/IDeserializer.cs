@@ -2,18 +2,13 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using JarvisDiscordBot.Core;
+using JarvisDiscordBot.Models;
 using System.Threading.Tasks;
 
-namespace JarvisDiscordBot
+namespace JarvisDiscordBot.Services
 {
-    internal static class Program
+    public interface IDeserializer
     {
-        private static async Task Main(string[] args)
-        {
-            var entryPoint = new EntryPoint();
-            await entryPoint.Start();
-        }
-
+        Task<Config> ReadConfig();
     }
 }

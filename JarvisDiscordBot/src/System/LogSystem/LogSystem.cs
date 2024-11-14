@@ -30,7 +30,7 @@ namespace JarvisDiscordBot
         {
             foreach (var logger in m_loggers)
             {
-#if SKY_FORGE_TEST || SKY_FORGE_DEBUG
+#if DEBUG
                 if(level >= LogLevel.Defualt)
                     logger.Logging(Patern(message), level);
 #else
