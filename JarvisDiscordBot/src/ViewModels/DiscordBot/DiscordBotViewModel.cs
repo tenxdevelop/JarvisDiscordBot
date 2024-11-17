@@ -23,11 +23,17 @@ namespace JarvisDiscordBot.ViewModels
 
         public async Task Start()
         {
-            await m_discordBotModel.DiscordClient.LoginAsync(Discord.TokenType.Bot, m_discordBotModel.Token);
-            await m_discordBotModel.DiscordClient.StartAsync();
-            Log.CoreLogger?.Logging("Discord Bot is already!!", LogLevel.Info);
-            await Task.Delay(-1);
-        }
+            try
+            {
+                await m_discordBotModel.DiscordClient.LoginAsync(Discord.TokenType.Bot, m_discordBotModel.Token);
+                await m_discordBotModel.DiscordClient.StartAsync();
+                Log.CoreLogger?.Logging("Discord bot is connected!!", LogLevel.Info);
+                await Task.Delay(-1);
+            }
+            catch (Exception ex)
+            {
+                Log.CoreLogger?.Logging($"Error start discord bot. Exception when start: {ex}", LogLevel.Error);
+            }
 
        
     }
