@@ -3,11 +3,10 @@
 \**************************************************************************/
 
 using JarvisDiscordBot.Services.Deserializer;
+using JarvisDiscordBot.ViewModels;
 using JarvisDiscordBot.Services;
-using DSharpPlus.CommandsNext;
+using JarvisDiscordBot.Models;
 using System.Threading.Tasks;
-using DSharpPlus.EventArgs;
-using DSharpPlus;
 using System;
 
 
@@ -15,10 +14,7 @@ namespace JarvisDiscordBot.Core
 {
     public class EntryPoint : IDisposable
     {
-        private bool m_disposed = false;
-
-        private DiscordClient m_discordClient;
-        private CommandsNextExtension m_commandsExtension;
+        private IDiscordBotViewModel m_discordBot;
         public async Task Start()
         {
             FileSystem.Init<NetCoreIOController>();
@@ -29,23 +25,12 @@ namespace JarvisDiscordBot.Core
 
             var config = await deserializer.ReadConfig();
 
-            var discordConfig = new DiscordConfiguration()
-            {
-                Intents = DiscordIntents.All,
-                Token = config.Token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true
-            };
+            var discordBotModel = new DiscordBotModel(config);
+            m_discordBot = new DiscordBotViewModel(discordBotModel);
 
-            m_discordClient = new DiscordClient(discordConfig);
-            m_discordClient.Ready += ClientReady;
-            await m_discordClient.ConnectAsync();
-            await Task.Delay(-1);
-        }
+            DiscordCommandRegistration.RegisterCommand(m_discordBot);
 
-        private Task ClientReady(DiscordClient sender, ReadyEventArgs args)
-        {
-            return Task.CompletedTask;
+            await m_discordBot.Start();
         }
 
         public void Dispose()
@@ -53,6 +38,6 @@ namespace JarvisDiscordBot.Core
             Log.CoreLogger?.Logging("Destroy system.", LogLevel.Info);
             Log.Destroy();
         }
-     
+        
     }
 }
