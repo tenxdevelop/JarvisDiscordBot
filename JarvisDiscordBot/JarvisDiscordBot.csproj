@@ -45,6 +45,9 @@
     <Reference Include="DSharpPlus.Interactivity, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\DSharpPlus.Interactivity.4.5.0\lib\netstandard2.0\DSharpPlus.Interactivity.dll</HintPath>
     </Reference>
+    <Reference Include="DSharpPlus.Lavalink, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DSharpPlus.Lavalink.4.5.0\lib\netstandard2.0\DSharpPlus.Lavalink.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
@@ -145,7 +148,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\Controller\Command\TestCommand.cs" />
+    <Compile Include="src\Controller\Command\MusicCommand.cs" />
     <Compile Include="src\Models\Config.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="src\Models\DiscordBot\DiscordBotModel.cs" />
