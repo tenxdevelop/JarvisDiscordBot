@@ -3,14 +3,13 @@
 \**************************************************************************/
 
 using JarvisDiscordBot.Models;
-using System.Threading.Tasks;
 
 namespace JarvisDiscordBot.ViewModels
 {
     public sealed class DiscordBotViewModel : IDiscordBotViewModel
     {
-        private DiscordBotModel m_discordBotModel;
-        public DiscordBotViewModel(DiscordBotModel discordBotModel)
+        private IDiscordBotModel m_discordBotModel;
+        public DiscordBotViewModel(IDiscordBotModel discordBotModel)
         {
             m_discordBotModel = discordBotModel;
         }
@@ -19,12 +18,14 @@ namespace JarvisDiscordBot.ViewModels
         {
             var typeCommand = typeof(TCommand);
 
-            m_discordBotModel.DiscordCommand.RegisterCommands(typeCommand);
+            
         }
 
         public async Task Start()
         {
-            await m_discordBotModel.DiscordClient.ConnectAsync();
+            await m_discordBotModel.DiscordClient.LoginAsync(Discord.TokenType.Bot, m_discordBotModel.Token);
+            await m_discordBotModel.DiscordClient.StartAsync();
+            Log.CoreLogger?.Logging("Discord Bot is already!!", LogLevel.Info);
             await Task.Delay(-1);
         }
 

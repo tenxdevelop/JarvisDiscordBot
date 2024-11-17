@@ -6,15 +6,12 @@ using JarvisDiscordBot.Services.Deserializer;
 using JarvisDiscordBot.ViewModels;
 using JarvisDiscordBot.Services;
 using JarvisDiscordBot.Models;
-using System.Threading.Tasks;
-using System;
-
 
 namespace JarvisDiscordBot.Core
 {
     public class EntryPoint : IDisposable
     {
-        private IDiscordBotViewModel m_discordBot;
+        private IDiscordBotViewModel? m_discordBot;
         public async Task Start()
         {
             FileSystem.Init<NetCoreIOController>();

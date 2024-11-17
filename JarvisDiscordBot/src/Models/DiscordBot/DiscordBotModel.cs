@@ -2,45 +2,43 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using DSharpPlus.CommandsNext;
-using System.Threading.Tasks;
-using DSharpPlus.EventArgs;
-using DSharpPlus;
+using Discord.WebSocket;
+using Discord.Commands;
+using Discord;
 
 namespace JarvisDiscordBot.Models
 {
-    public class DiscordBotModel
+    public class DiscordBotModel : IDiscordBotModel
     {
-        public DiscordClient DiscordClient { get; private set; }
-        public CommandsNextExtension DiscordCommand { get; private set; }
+        public DiscordSocketClient DiscordClient { get; private set; }
 
-        public DiscordBotModel(Config config) 
+        public CommandService DiscordCommand { get; private set; }
+
+        public string Token { get; private set; }
+
+        public string Prefix { get; private set; }
+
+        public DiscordBotModel(Config config)
         {
-            var discordConfig = new DiscordConfiguration()
+            Token = config.Token;
+            Prefix = config.Prefix;
+
+            var discordClientConfig = new DiscordSocketConfig()
             {
-                Intents = DiscordIntents.All,
-                Token = config.Token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true
+                AlwaysDownloadUsers = true,
+                MessageCacheSize = 100,
+                LogLevel = LogSeverity.Debug
             };
 
-            DiscordClient = new DiscordClient(discordConfig);
-            DiscordClient.Ready += ClientReady;
+            DiscordClient = new DiscordSocketClient(discordClientConfig);
 
-            var commandConfig = new CommandsNextConfiguration()
+            var discordCommandConfig = new CommandServiceConfig()
             {
-                StringPrefixes = new string[] { config.Prefix },
-                EnableMentionPrefix = true,
-                EnableDms = true,
-                EnableDefaultHelp = false
+                CaseSensitiveCommands = false,
+                LogLevel = LogSeverity.Debug
             };
 
-            DiscordCommand = DiscordClient.UseCommandsNext(commandConfig);
-        }
-
-        private Task ClientReady(DiscordClient sender, ReadyEventArgs args)
-        {
-            return Task.CompletedTask;
+            DiscordCommand = new CommandService(discordCommandConfig);
         }
     }
 }

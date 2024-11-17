@@ -2,14 +2,16 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using DSharpPlus.CommandsNext;
-using DSharpPlus;
+using Discord.Commands;
+using Discord.WebSocket;
 
 namespace JarvisDiscordBot.Models
 {
     public interface IDiscordBotModel
     {
-        DiscordClient m_discordClient { get; }
-        CommandsNextExtension m_discordCommand { get; }
+        DiscordSocketClient DiscordClient { get; }
+        CommandService DiscordCommand { get; }
+        string Token { get; }
+        string Prefix { get; }
     }
 }
