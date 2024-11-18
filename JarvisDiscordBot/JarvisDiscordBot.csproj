@@ -15,4 +15,8 @@
     <PackageReference Include="Victoria" Version="7.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="src\Models\Новая папка\" />
+  </ItemGroup>
+
 </Project>

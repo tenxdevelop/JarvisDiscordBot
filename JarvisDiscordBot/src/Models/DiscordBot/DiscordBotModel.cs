@@ -16,7 +16,7 @@ namespace JarvisDiscordBot.Models
         public LavalinkExtension LavaLink { get; private set; }
         public LavalinkConfiguration LavaLinkConfiguration { get; private set; }
 
-        public DiscordBotModel(Config config)
+        public DiscordBotModel(IServiceProvider service, Config config)
         {
             if (!int.TryParse(config.LavalinkPort, out var lavalinkPort))
             {
@@ -35,7 +35,7 @@ namespace JarvisDiscordBot.Models
             {
                 Password = config.LavalinkAutorisation,
                 RestEndpoint = lavaLinkEndPoint,
-                SocketEndpoint = lavaLinkEndPoint
+                SocketEndpoint = lavaLinkEndPoint                
             };
 
             var configDiscordClient = new DiscordConfiguration()
@@ -60,7 +60,8 @@ namespace JarvisDiscordBot.Models
                 EnableDefaultHelp = true,
                 DmHelp = true,
                 IgnoreExtraArguments = false,
-                UseDefaultCommandHandler = true
+                UseDefaultCommandHandler = true,
+                Services = service
             };
 
             DiscordCommand = DiscordClient.UseCommandsNext(configDiscordCommand);

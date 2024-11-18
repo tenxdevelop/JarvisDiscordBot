@@ -3,5 +3,6 @@
   "Prefix": "!",
   "LavalinkHostName": "hostName",
   "LavalinkPort": "2333",
-  "LavalinkAutorisation": "Autorisation"
+  "LavalinkAutorisation": "Autorisation",
+  "VkToken": "token"
 }

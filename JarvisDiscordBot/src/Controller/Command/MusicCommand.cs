@@ -3,6 +3,7 @@
 \**************************************************************************/
 
 using DSharpPlus.CommandsNext.Attributes;
+using JarvisDiscordBot.Services;
 using DSharpPlus.CommandsNext;
 using JarvisDiscordBot.Models;
 using DSharpPlus.Lavalink;
@@ -14,6 +15,12 @@ namespace JarvisDiscordBot.Controller
     public sealed class MusicCommand : BaseCommandModule, IDiscordCommandModel
     {
         private const string CHANEL_MUSIC = "music";
+        private VkAudioService m_vkAudioService;
+
+        public MusicCommand(VkAudioService vkAudioService)
+        {
+            m_vkAudioService = vkAudioService;
+        }
 
         [Command("play")]
         public async Task PlayMusicInfoOrResume(CommandContext commandContext)
@@ -71,9 +78,49 @@ namespace JarvisDiscordBot.Controller
         }
 
         [Command("play")]
-        public async Task PlayMusic(CommandContext commandContext, [RemainingText] string query)
+        public async Task PlayMusicFromYoutube(CommandContext commandContext, [RemainingText] string query)
         {
-            
+
+            await PlayMusic(commandContext, query, SearchMusicType.YoutubeWithMusicName);
+        }
+
+        [Command("playVk")]
+        public async Task PlayMusicFromVk(CommandContext commandContext, [RemainingText] string query)
+        {
+            await PlayMusic(commandContext, query, SearchMusicType.VkWithMusicName);
+        }
+
+        [Command("playUrl")]
+        public async Task PlayMusicFromYoutubeWithUrl(CommandContext commandContext, [RemainingText] string query)
+        {
+            await PlayMusic(commandContext, query, SearchMusicType.YoutubeWithMusicUrl);
+        }
+
+        [Command("stop")]
+        public async Task StopMusic(CommandContext commandContext)
+        {
+            var isNotCorrectChannel = await CheckChannel(commandContext);
+
+            if (isNotCorrectChannel)
+                return;
+
+            var connection = await GetConnection(commandContext);
+
+            await connection.StopAsync();
+            await connection.DisconnectAsync();
+
+            var stopEmbed = new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.Red,
+                Title = $"Трек {connection.CurrentState.CurrentTrack.Title} приостановлен.",
+                Description = "Успешно вышел из голосового сервера!"
+            };
+
+            await commandContext.Channel.SendMessageAsync(embed: stopEmbed);
+        }
+
+        private async Task PlayMusic(CommandContext commandContext, string query, SearchMusicType searchMusicType)
+        {
             var isNotCorrectChannel = await CheckChannel(commandContext);
 
             if (isNotCorrectChannel)
@@ -100,45 +147,56 @@ namespace JarvisDiscordBot.Controller
                 return;
             }
 
-            var searchQuery = await node.Rest.GetTracksAsync(query, LavalinkSearchType.Youtube);
+            LavalinkTrack music = null;
 
-            if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
-                searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
+            switch (searchMusicType)
             {
-                await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Youtube");
-                Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
-                return;
+                case SearchMusicType.YoutubeWithMusicName:
+                    var searchQuery = await node.Rest.GetTracksAsync(query, LavalinkSearchType.Youtube);
+
+                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
+                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
+                    {
+                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Youtube");
+                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
+                        return;
+                    }
+
+                    music = searchQuery.Tracks.First();
+                    break;
+
+                case SearchMusicType.YoutubeWithMusicUrl:
+                    searchQuery = await node.Rest.GetTracksAsync(new Uri(query));
+                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
+                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
+                    {
+                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Youtube");
+                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
+                        return;
+                    }
+
+                    music = searchQuery.Tracks.First();
+                    break;
+
+                case SearchMusicType.VkWithMusicName:
+                    var audioUrl = await m_vkAudioService.FindAudioUrlByNameAsync(query);
+                    searchQuery = await node.Rest.GetTracksAsync(audioUrl);
+                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
+                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
+                    {
+                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Lavalink");
+                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
+                        return;
+                    }
+
+                    music = searchQuery.Tracks.First();
+                    break;
             }
-
-            var music = searchQuery.Tracks.First();
-
+            
             await connection.PlayAsync(music);
             Log.ClientLogger?.Logging($"Connect to channel: {userVoiceChannel.Name}", LogLevel.Info);
 
             await ShowMusicDescription(commandContext, music, userVoiceChannel.Name);
-        }
-
-        [Command("stop")]
-        public async Task StopMusic(CommandContext commandContext)
-        {
-            var isNotCorrectChannel = await CheckChannel(commandContext);
-
-            if (isNotCorrectChannel)
-                return;
-
-            var connection = await GetConnection(commandContext);
-
-            await connection.StopAsync();
-            await connection.DisconnectAsync();
-
-            var stopEmbed = new DiscordEmbedBuilder()
-            {
-                Color = DiscordColor.Red,
-                Title = $"Трек {connection.CurrentState.CurrentTrack.Title} приостановлен.",
-                Description = "Успешно вышел из голосового сервера!"
-            };
-
-            await commandContext.Channel.SendMessageAsync(embed: stopEmbed);
         }
 
         private async Task<bool> CheckChannel(CommandContext commandContext)
