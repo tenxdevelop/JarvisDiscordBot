@@ -7,15 +7,18 @@ using JarvisDiscordBot.ViewModels;
 using JarvisDiscordBot.Services;
 using JarvisDiscordBot.Models;
 
+
 namespace JarvisDiscordBot.Core
 {
     public class EntryPoint : IDisposable
     {
         private IDiscordBotViewModel? m_discordBot;
+
         public async Task Start()
         {
             FileSystem.Init<NetCoreIOController>();
             Log.Init();
+            
 
             var deserializer = new Deserializer();
             deserializer.Init<JSONDeserializer>();
@@ -35,6 +38,5 @@ namespace JarvisDiscordBot.Core
             Log.CoreLogger?.Logging("Destroy system.", LogLevel.Info);
             Log.Destroy();
         }
-        
     }
 }

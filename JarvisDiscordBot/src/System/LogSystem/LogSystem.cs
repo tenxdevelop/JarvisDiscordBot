@@ -2,8 +2,6 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using System.Collections.Generic;
-
 namespace JarvisDiscordBot
 {
 

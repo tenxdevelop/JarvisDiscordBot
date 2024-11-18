@@ -2,7 +2,7 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-
+using JarvisDiscordBot.Controller;
 using JarvisDiscordBot.ViewModels;
 
 namespace JarvisDiscordBot.Core
@@ -11,7 +11,7 @@ namespace JarvisDiscordBot.Core
     {
         public static void RegisterCommand(IDiscordBotViewModel discordBot)
         {
-            
+            discordBot.RegisterCommand<MusicCommand>();
         }
     }
 }

@@ -2,43 +2,68 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using Discord.WebSocket;
-using Discord.Commands;
-using Discord;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
+using DSharpPlus;
 
 namespace JarvisDiscordBot.Models
 {
     public class DiscordBotModel : IDiscordBotModel
     {
-        public DiscordSocketClient DiscordClient { get; private set; }
-
-        public CommandService DiscordCommand { get; private set; }
-
-        public string Token { get; private set; }
-
-        public string Prefix { get; private set; }
+        public DiscordClient DiscordClient { get; private set; }
+        public CommandsNextExtension DiscordCommand { get; private set; }
+        public LavalinkExtension LavaLink { get; private set; }
+        public LavalinkConfiguration LavaLinkConfiguration { get; private set; }
 
         public DiscordBotModel(Config config)
         {
-            Token = config.Token;
-            Prefix = config.Prefix;
-
-            var discordClientConfig = new DiscordSocketConfig()
+            if (!int.TryParse(config.LavalinkPort, out var lavalinkPort))
             {
-                AlwaysDownloadUsers = true,
-                MessageCacheSize = 100,
-                LogLevel = LogSeverity.Debug
+                Log.CoreLogger?.Logging("Error can't read lavalink port from config", LogLevel.Error);
+                return;
+            }
+
+            var lavaLinkEndPoint = new ConnectionEndpoint
+            {
+                Hostname = config.LavalinkHostName,
+                Port = lavalinkPort,
+                Secured = true
             };
 
-            DiscordClient = new DiscordSocketClient(discordClientConfig);
-
-            var discordCommandConfig = new CommandServiceConfig()
+            LavaLinkConfiguration = new LavalinkConfiguration()
             {
-                CaseSensitiveCommands = false,
-                LogLevel = LogSeverity.Debug
+                Password = config.LavalinkAutorisation,
+                RestEndpoint = lavaLinkEndPoint,
+                SocketEndpoint = lavaLinkEndPoint
             };
 
-            DiscordCommand = new CommandService(discordCommandConfig);
+            var configDiscordClient = new DiscordConfiguration()
+            {
+                Token = config.Token,
+                Intents = DiscordIntents.All,
+                MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
+                TokenType = TokenType.Bot,
+                AutoReconnect = true,
+                LoggerFactory = new DiscordLoggerFactory()
+            };
+
+            DiscordClient = new DiscordClient(configDiscordClient);
+            
+            LavaLink = DiscordClient.UseLavalink();
+
+            var configDiscordCommand = new CommandsNextConfiguration()
+            {
+                StringPrefixes = new List<string>().Append(config.Prefix),
+                EnableMentionPrefix = true,
+                CaseSensitive = false,
+                EnableDefaultHelp = true,
+                DmHelp = true,
+                IgnoreExtraArguments = false,
+                UseDefaultCommandHandler = true
+            };
+
+            DiscordCommand = DiscordClient.UseCommandsNext(configDiscordCommand);
         }
     }
 }

@@ -1,4 +1,7 @@
 ﻿{
   "Token": "token",
-  "Prefix":  "!"
+  "Prefix": "!",
+  "LavalinkHostName": "hostName",
+  "LavalinkPort": "2333",
+  "LavalinkAutorisation": "Autorisation"
 }

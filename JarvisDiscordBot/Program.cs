@@ -1,4 +1,7 @@
-﻿
+﻿/**************************************************************************\
+    Copyright SkyForge Corporation. All Rights Reserved.
+\**************************************************************************/
+
 using JarvisDiscordBot.Core;
 
 namespace JarvisDiscordBot

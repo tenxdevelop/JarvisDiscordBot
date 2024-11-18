@@ -2,8 +2,6 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using System;
-
 namespace JarvisDiscordBot
 {
 

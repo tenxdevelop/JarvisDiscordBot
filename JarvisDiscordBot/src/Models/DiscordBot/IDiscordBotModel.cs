@@ -2,16 +2,17 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-using Discord.Commands;
-using Discord.WebSocket;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Lavalink;
+using DSharpPlus;
 
 namespace JarvisDiscordBot.Models
 {
     public interface IDiscordBotModel
     {
-        DiscordSocketClient DiscordClient { get; }
-        CommandService DiscordCommand { get; }
-        string Token { get; }
-        string Prefix { get; }
+        DiscordClient DiscordClient { get; }
+        CommandsNextExtension DiscordCommand { get; }
+        LavalinkConfiguration LavaLinkConfiguration { get; } 
+        LavalinkExtension LavaLink { get; }
     }
 }
