@@ -1,9 +1,13 @@
-﻿using JarvisDiscordBot.Models;
+﻿/**************************************************************************\
+    Copyright SkyForge Corporation. All Rights Reserved.
+\**************************************************************************/
+
+using JarvisDiscordBot.Models;
 using Newtonsoft.Json.Linq;
 
 namespace JarvisDiscordBot.Services
 {
-    public class VkAudioService
+    public class VkAudioService : IVkAudioService
     {
         private readonly HttpClient httpClient;
         private readonly string accessToken;

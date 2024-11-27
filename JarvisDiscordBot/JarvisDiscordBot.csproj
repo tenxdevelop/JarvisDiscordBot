@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="src\Controller\Command\" />
     <Folder Include="src\Models\Новая папка\" />
   </ItemGroup>
 

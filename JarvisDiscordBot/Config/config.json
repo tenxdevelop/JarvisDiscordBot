@@ -4,5 +4,6 @@
   "LavalinkHostName": "hostName",
   "LavalinkPort": "2333",
   "LavalinkAutorisation": "Autorisation",
-  "VkToken": "token"
+  "VkToken": "token",
+  "YoutubeApiKey": "token"
 }

@@ -3,9 +3,7 @@
 \**************************************************************************/
 
 using JarvisDiscordBot.Models;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using System;
 
 namespace JarvisDiscordBot.Services
 {

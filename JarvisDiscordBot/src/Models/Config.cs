@@ -11,6 +11,7 @@ namespace JarvisDiscordBot.Models
         public string LavalinkHostName { get; set; }
         public string LavalinkPort { get; set; }
         public string LavalinkAutorisation { get; set; }
-        public string VkToken { get; private set; }
+        public string VkToken { get; set; }
+        public string YoutubeApiKey { get; set; }
     }
 }

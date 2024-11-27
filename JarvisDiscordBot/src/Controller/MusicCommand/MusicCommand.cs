@@ -15,21 +15,27 @@ namespace JarvisDiscordBot.Controller
     public sealed class MusicCommand : BaseCommandModule, IDiscordCommandModel
     {
         private const string CHANEL_MUSIC = "music";
-        private VkAudioService m_vkAudioService;
 
-        public MusicCommand(VkAudioService vkAudioService)
+        private IVkAudioService m_vkAudioService;
+        private IYoutubeService m_youtubeService;
+
+        private Stack<LavalinkTrack> m_musicStack;
+        private DiscordChannel m_musicChanel;
+        public MusicCommand(IVkAudioService vkAudioService, IYoutubeService youtubeService)
         {
             m_vkAudioService = vkAudioService;
+            m_youtubeService = youtubeService;
+            m_musicStack = new Stack<LavalinkTrack>();
         }
 
         [Command("play")]
         public async Task PlayMusicInfoOrResume(CommandContext commandContext)
         {
             var isNotCorrectChannel = await CheckChannel(commandContext);
-   
+            
             if (isNotCorrectChannel)
                return;
-
+            
             var lavalink = commandContext.Client.GetLavalink();
             var userVoiceChannel = commandContext.Member?.VoiceState.Channel;
 
@@ -37,7 +43,7 @@ namespace JarvisDiscordBot.Controller
             {
                 var node = lavalink.ConnectedNodes.Values.First();
                 var connection = node.GetGuildConnection(commandContext.Member.VoiceState.Guild);
-                if (connection.CurrentState.CurrentTrack is not null)
+                if (connection?.CurrentState.CurrentTrack is not null)
                 {
                     await connection.ResumeAsync();
 
@@ -81,19 +87,25 @@ namespace JarvisDiscordBot.Controller
         public async Task PlayMusicFromYoutube(CommandContext commandContext, [RemainingText] string query)
         {
 
-            await PlayMusic(commandContext, query, SearchMusicType.YoutubeWithMusicName);
+            await PlayMusic(commandContext, query, new NameMusicYoutubSearcher());
         }
 
         [Command("playVk")]
         public async Task PlayMusicFromVk(CommandContext commandContext, [RemainingText] string query)
         {
-            await PlayMusic(commandContext, query, SearchMusicType.VkWithMusicName);
+            await PlayMusic(commandContext, query, new NameMusicVkSearcher(m_vkAudioService));
         }
 
         [Command("playUrl")]
         public async Task PlayMusicFromYoutubeWithUrl(CommandContext commandContext, [RemainingText] string query)
         {
-            await PlayMusic(commandContext, query, SearchMusicType.YoutubeWithMusicUrl);
+            await PlayMusic(commandContext, query, new UrlMusicYoutubeSearcher());
+        }
+
+        [Command("playlistUrl")]
+        public async Task PlayPlaylistMusicFromYoutubeWithUrl(CommandContext commandContext, [RemainingText] string query)
+        {
+            await PlayMusic(commandContext, query, new UrlPlaylistMusicYoutubeSearcher(m_youtubeService));
         }
 
         [Command("stop")]
@@ -106,6 +118,10 @@ namespace JarvisDiscordBot.Controller
 
             var connection = await GetConnection(commandContext);
 
+            if (connection is null)
+                return;
+            
+            connection.PlaybackFinished -= PlayMusicCallBack;
             await connection.StopAsync();
             await connection.DisconnectAsync();
 
@@ -119,7 +135,41 @@ namespace JarvisDiscordBot.Controller
             await commandContext.Channel.SendMessageAsync(embed: stopEmbed);
         }
 
-        private async Task PlayMusic(CommandContext commandContext, string query, SearchMusicType searchMusicType)
+        [Command("nextMusic")]
+        public async Task NextMusic(CommandContext commandContext)
+        {
+            var isNotCorrectChannel = await CheckChannel(commandContext);
+
+            if(isNotCorrectChannel)
+                return;
+
+
+            var connection = await GetConnection(commandContext);
+
+            if (connection is null)
+                return;
+
+            if (m_musicStack.TryPop(out var track))
+            {
+                await connection.PlayAsync(track);
+
+                Log.ClientLogger?.Logging($"Connect to channel: {connection.Channel.Name}", LogLevel.Info);
+
+                await ShowMusicDescription(m_musicChanel, track, connection.Channel.Name);
+            }
+            else
+            {
+                var resumeEmbed = new DiscordEmbedBuilder()
+                {
+                    Color = DiscordColor.Green,
+                    Title = $"следующей композиции нету.",
+                };
+
+                await commandContext.Channel.SendMessageAsync(embed: resumeEmbed);
+            }
+        }
+
+        private async Task PlayMusic(CommandContext commandContext, string query, IMusicSearcher musicSearcher)
         {
             var isNotCorrectChannel = await CheckChannel(commandContext);
 
@@ -139,7 +189,7 @@ namespace JarvisDiscordBot.Controller
             await node.ConnectAsync(userVoiceChannel);
 
             var connection = node.GetGuildConnection(commandContext.Member?.VoiceState.Guild);
-
+            connection.PlaybackFinished += PlayMusicCallBack;
             if (connection is null)
             {
                 await commandContext.Channel.SendMessageAsync("Соединение не установлено....");
@@ -147,56 +197,46 @@ namespace JarvisDiscordBot.Controller
                 return;
             }
 
-            LavalinkTrack music = null;
+            var musicList = musicSearcher.SearchMusic(node, query);
 
-            switch (searchMusicType)
+            if (musicList is null)
             {
-                case SearchMusicType.YoutubeWithMusicName:
-                    var searchQuery = await node.Rest.GetTracksAsync(query, LavalinkSearchType.Youtube);
-
-                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
-                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
-                    {
-                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Youtube");
-                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
-                        return;
-                    }
-
-                    music = searchQuery.Tracks.First();
-                    break;
-
-                case SearchMusicType.YoutubeWithMusicUrl:
-                    searchQuery = await node.Rest.GetTracksAsync(new Uri(query));
-                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
-                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
-                    {
-                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Youtube");
-                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
-                        return;
-                    }
-
-                    music = searchQuery.Tracks.First();
-                    break;
-
-                case SearchMusicType.VkWithMusicName:
-                    var audioUrl = await m_vkAudioService.FindAudioUrlByNameAsync(query);
-                    searchQuery = await node.Rest.GetTracksAsync(audioUrl);
-                    if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches ||
-                        searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
-                    {
-                        await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} на Lavalink");
-                        Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
-                        return;
-                    }
-
-                    music = searchQuery.Tracks.First();
-                    break;
+                await commandContext.Channel.SendMessageAsync($"Не уддалось найти музыку: {query} через серер lavalink");
+                Log.ClientLogger?.Logging($"Can't found music by query: {query}", LogLevel.Info);
             }
-            
-            await connection.PlayAsync(music);
-            Log.ClientLogger?.Logging($"Connect to channel: {userVoiceChannel.Name}", LogLevel.Info);
 
-            await ShowMusicDescription(commandContext, music, userVoiceChannel.Name);
+            await foreach (var music in musicList)
+            {
+                m_musicStack.Push(music);
+                if (connection.CurrentState.CurrentTrack is null)
+                {
+                    await connection.PlayAsync(music);
+
+                    Log.ClientLogger?.Logging($"Connect to channel: {userVoiceChannel.Name}", LogLevel.Info);
+                    m_musicChanel = commandContext.Channel;
+                    await ShowMusicDescription(commandContext.Channel, music, userVoiceChannel.Name);
+                }
+            }
+        }
+
+        private async Task PlayMusicCallBack(LavalinkGuildConnection connection, DSharpPlus.Lavalink.EventArgs.TrackFinishEventArgs args)
+        {
+            if (connection.CurrentState.CurrentTrack is not null)
+                return;
+
+            if (m_musicStack.TryPop(out var track))
+            {
+                await connection.PlayAsync(track);
+
+                Log.ClientLogger?.Logging($"Connect to channel: {connection.Channel.Name}", LogLevel.Info);
+
+                await ShowMusicDescription(m_musicChanel, track, connection.Channel.Name);
+            }
+            else
+            {
+                connection.PlaybackFinished -= PlayMusicCallBack;
+                await connection.DisconnectAsync();
+            }
         }
 
         private async Task<bool> CheckChannel(CommandContext commandContext)
@@ -262,7 +302,7 @@ namespace JarvisDiscordBot.Controller
             return connection;
         }
 
-        private async Task ShowMusicDescription(CommandContext commandContext, LavalinkTrack music, string ChannelName)
+        private async Task ShowMusicDescription(DiscordChannel chanel, LavalinkTrack music, string ChannelName)
         {
             var musicDescription = $"Сейчас играет: {music.Title} \n" + $"Автор: {music.Author} \n";
             var musicDescriptionEmbed = new DiscordEmbedBuilder()
@@ -271,7 +311,7 @@ namespace JarvisDiscordBot.Controller
                 Title = $"подключился к каналу {ChannelName}",
                 Description = musicDescription
             };
-            await commandContext.Channel.SendMessageAsync(musicDescriptionEmbed);
+            await chanel.SendMessageAsync(musicDescriptionEmbed);
         }
 
     }

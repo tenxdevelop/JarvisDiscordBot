@@ -2,12 +2,10 @@
     Copyright SkyForge Corporation. All Rights Reserved.
 \**************************************************************************/
 
-namespace JarvisDiscordBot.Models
+namespace JarvisDiscordBot.Services
 {
-    public enum SearchMusicType
+    public interface IYoutubeService
     {
-        YoutubeWithMusicName,
-        YoutubeWithMusicUrl,
-        VkWithMusicName
+        Task<List<string>> GetPlaylistSongs(string url);
     }
 }

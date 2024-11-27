@@ -44,8 +44,8 @@ namespace JarvisDiscordBot.Core
 
         private ServiceProvider RegisterService(ServiceCollection container)
         {
-            container.AddSingleton(factory => new VkAudioService(factory.GetRequiredService<Config>()));
-
+            container.AddSingleton<IVkAudioService>(factory => new VkAudioService(factory.GetRequiredService<Config>()));
+            container.AddSingleton<IYoutubeService>(factory => new YoutubeService(factory.GetRequiredService<Config>()));
             return container.BuildServiceProvider();
         }
     }
